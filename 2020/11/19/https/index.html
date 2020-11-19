@@ -1,0 +1,395 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TLS介绍和握手的详细 | Chanbaekrisss's Blog</title><meta name="keywords" content="TLS,SSL,https,http,网络协议"><meta name="author" content="Chanbaekrisss"><meta name="copyright" content="Chanbaekrisss"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><meta name="description" content="一、http和https概念 HTTP协议（HyperText Transfer Protocol，超文本传输协议）是因特网上应用最为广泛的一种网络传输协议，所有的WWW文件都必须遵守这个标准。简单的响应和请求，运行在TCP之上   HTTPS (Secure Hypertext Transfer Protocol)安全超文本传输协议，运行在TCP层之上， 且比HTTP和TCP之间加了一个SSL&#x2F;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TLS介绍和握手的详细">
+<meta property="og:url" content="https://hello-7gysxqay5376a05c-1256486697.tcloudbaseapp.com/blog/2020/11/19/https/index.html">
+<meta property="og:site_name" content="Chanbaekrisss&#39;s Blog">
+<meta property="og:description" content="一、http和https概念 HTTP协议（HyperText Transfer Protocol，超文本传输协议）是因特网上应用最为广泛的一种网络传输协议，所有的WWW文件都必须遵守这个标准。简单的响应和请求，运行在TCP之上   HTTPS (Secure Hypertext Transfer Protocol)安全超文本传输协议，运行在TCP层之上， 且比HTTP和TCP之间加了一个SSL&#x2F;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg">
+<meta property="article:published_time" content="2020-11-19T11:04:43.000Z">
+<meta property="article:modified_time" content="2020-11-19T11:07:35.969Z">
+<meta property="article:author" content="Chanbaekrisss">
+<meta property="article:tag" content="TLS">
+<meta property="article:tag" content="SSL">
+<meta property="article:tag" content="https">
+<meta property="article:tag" content="http">
+<meta property="article:tag" content="网络协议">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg"><link rel="shortcut icon" href="/blog/img/avatar.jpg"><link rel="canonical" href="https://hello-7gysxqay5376a05c-1256486697.tcloudbaseapp.com/blog/2020/11/19/https/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/blog/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.css"><script>var GLOBAL_CONFIG = { 
+  root: '/blog/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  ClickShowText: undefined,
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#49b1f5","bgDark":"#121212","position":"bottom-left"},
+  justifiedGallery: {
+    js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+    css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isanchor: true
+};
+
+var saveToLocal = {
+  set: function setWithExpiry(key, value, ttl) {
+    const now = new Date()
+    const expiryDay = ttl * 86400000
+    const item = {
+      value: value,
+      expiry: now.getTime() + expiryDay,
+    }
+    localStorage.setItem(key, JSON.stringify(item))
+  },
+
+  get: function getWithExpiry(key) {
+    const itemStr = localStorage.getItem(key)
+
+    if (!itemStr) {
+      return undefined
+    }
+    const item = JSON.parse(itemStr)
+    const now = new Date()
+
+    if (now.getTime() > item.expiry) {
+      localStorage.removeItem(key)
+      return undefined
+    }
+    return item.value
+  }
+}</script><script id="config_change">var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2020-11-19 19:07:35'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(function () {  window.activateDarkMode = function () {
+    document.documentElement.setAttribute('data-theme', 'dark')
+    if (document.querySelector('meta[name="theme-color"]') !== null) {
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+    }
+  }
+  window.activateLightMode = function () {
+    document.documentElement.setAttribute('data-theme', 'light')
+   if (document.querySelector('meta[name="theme-color"]') !== null) {
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+    }
+  }
+  const autoChangeMode = 'false'
+  const t = saveToLocal.get('theme')
+  if (autoChangeMode === '1') {
+    const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+    const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+    const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+    if (t === undefined) {
+      if (isLightMode) activateLightMode()
+      else if (isDarkMode) activateDarkMode()
+      else if (isNotSpecified || hasNoSupport) {
+        const now = new Date()
+        const hour = now.getHours()
+        const isNight = hour <= 6 || hour >= 18
+        isNight ? activateDarkMode() : activateLightMode()
+      }
+      window.matchMedia('(prefers-color-scheme: dark)').addListener(function (e) {
+        if (saveToLocal.get('theme') === undefined) {
+          e.matches ? activateDarkMode() : activateLightMode()
+        }
+      })
+    } else if (t === 'light') activateLightMode()
+    else activateDarkMode()
+  } else if (autoChangeMode === '2') {
+    const now = new Date()
+    const hour = now.getHours()
+    const isNight = hour <= 6 || hour >= 18
+    if (t === undefined) isNight ? activateDarkMode() : activateLightMode()
+    else if (t === 'light') activateLightMode()
+    else activateDarkMode()
+  } else {
+    if (t === 'dark') activateDarkMode()
+    else if (t === 'light') activateLightMode()
+  }const asideStatus = saveToLocal.get('aside-status')
+if (asideStatus !== undefined) {
+   if (asideStatus === 'hide') {
+     document.documentElement.classList.add('hide-aside')
+   } else {
+     document.documentElement.classList.remove('hide-aside')
+   }
+}})()</script><link rel="stylesheet" href="/blog/css/custom.css"><meta name="generator" content="Hexo 5.2.0"></head><body><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="author-avatar"><img class="avatar-img" data-lazy-src="/blog/img/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">2</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">5</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/gallery/"><i class="fa-fw fas fa-heart"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/blog/message/"><i class="fa-fw fas fa-comment-dots"></i><span> 留言板</span></a></div></div></div></div><div id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg)"><nav id="nav"><span id="blog_name"><a id="site-name" href="/blog/">Chanbaekrisss's Blog</a></span><span id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/blog/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/blog/gallery/"><i class="fa-fw fas fa-heart"></i><span> 相册</span></a></div><div class="menus_item"><a class="site-page" href="/blog/message/"><i class="fa-fw fas fa-comment-dots"></i><span> 留言板</span></a></div></div><span class="close" id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></span></span></nav><div id="post-info"><h1 class="post-title">TLS介绍和握手的详细</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2020-11-19T11:04:43.000Z" title="发表于 2020-11-19 19:04:43">2020-11-19</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2020-11-19T11:07:35.969Z" title="更新于 2020-11-19 19:07:35">2020-11-19</time></span></div><div class="meta-secondline"> <span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">1.1k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>3分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h3 id="一、http和https概念"><a href="#一、http和https概念" class="headerlink" title="一、http和https概念"></a>一、http和https概念</h3><blockquote>
+<p>HTTP协议（HyperText Transfer Protocol，超文本传输协议）是因特网上应用最为广泛的一种网络传输协议，所有的WWW文件都必须遵守这个标准。简单的响应和请求，运行在TCP之上</p>
+</blockquote>
+<blockquote>
+<p>HTTPS (Secure Hypertext Transfer Protocol)安全超文本传输协议，运行在TCP层之上， 且比HTTP和TCP之间加了一个SSL/TLS，在数据传输过程中，用到SSL/TLS对数据进行加密和解密，简单来说：<strong>HTTPS = HTTP + SSL/TLS</strong></p>
+</blockquote>
+<p><img src= "/blog/img/loading.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/xingjiahui/CDN@latest/2020/11/16/6dec43af838ec38fd4a6cabebb88fbf8.png"></p>
+<h3 id="二、http协议和https协议的区别："><a href="#二、http协议和https协议的区别：" class="headerlink" title="二、http协议和https协议的区别："></a>二、http协议和https协议的区别：</h3><ol>
+<li>http是超文本传输协议，信息是明文传输；https则是具有安全性的ssl加密传输协议。</li>
+<li>http默认端口是：80；https默认端口是443</li>
+<li>http连接简单，无状态；https由<code>ssl+http</code>实现身份验证、加密传输、报文完整性。</li>
+<li>https需要向CA机构申请证书，产生一定费用；http免费</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th align="center"></th>
+<th align="center">传输方式</th>
+<th align="center">端口</th>
+<th align="center">连接状态</th>
+<th align="center">成本</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">http</td>
+<td align="center">明文传输</td>
+<td align="center">80</td>
+<td align="center">无状态、连接简单的响应和请求</td>
+<td align="center">无</td>
+</tr>
+<tr>
+<td align="center">https</td>
+<td align="center">加密传输、身份验证、报文完整性</td>
+<td align="center">443</td>
+<td align="center">tls/ssl + http</td>
+<td align="center">申请SSL证书产生的费用，价格几百元到上万元不等</td>
+</tr>
+</tbody></table>
+<h3 id="三、SSL和TLS介绍"><a href="#三、SSL和TLS介绍" class="headerlink" title="三、SSL和TLS介绍"></a>三、SSL和TLS介绍</h3><p>1、概念：</p>
+<blockquote>
+<p><strong>SSL</strong>：（Secure Socket Layer，安全套接字层），为Netscape所研发，用以保障在Internet上数据传输之安全，利用数据加密(Encryption)技术，可确保数据在网络上之传输过程中不会被截取，</p>
+</blockquote>
+<blockquote>
+<p><strong>TLS</strong>：(Transport Layer Security，传输层安全协议)，用于两个应用程序之间提供保密性和数据完整性。SSL是TLS的前身</p>
+</blockquote>
+<p>2、发展过程：</p>
+<table>
+<thead>
+<tr>
+<th>协议</th>
+<th>年份</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SSL 2.0</td>
+<td>1995</td>
+</tr>
+<tr>
+<td>SSL 3.0</td>
+<td>1996</td>
+</tr>
+<tr>
+<td>TLS 1.0</td>
+<td>1999</td>
+</tr>
+<tr>
+<td>TLS 1.1</td>
+<td>2006</td>
+</tr>
+<tr>
+<td>TLS 1.2</td>
+<td>2008</td>
+</tr>
+<tr>
+<td>TLS 1.3</td>
+<td>2018</td>
+</tr>
+</tbody></table>
+<p>​    注意：现在普通使用的TLS，因为在2011年和2015年的时候SSL2.0和SSL3.0就已经分别被弃用了</p>
+<p>3、SSL/TLS协议作用：</p>
+<ol>
+<li><p>认证用户和服务器，确保数据发送到正确的客户机和服务器；</p>
+</li>
+<li><p>加密数据以防止数据中途被窃取；</p>
+</li>
+<li><p>维护数据的完整性，确保数据在传输过程中不被改变。</p>
+</li>
+</ol>
+<h3 id="四、TLS-握手详细过程"><a href="#四、TLS-握手详细过程" class="headerlink" title="四、TLS 握手详细过程"></a>四、TLS 握手详细过程</h3><p>1、证书申请：</p>
+<ul>
+<li>服务端本地生成公钥和私钥，将公钥、个人信息(域名信息)、组织信息等向CA机构申请认证(不包含私钥)</li>
+<li>CA机构通过线上、线下等多种手段<strong>验证</strong>申请者提供信息的真实性，如组织是否存在，企业是否合法，是否拥有域名的所有权等</li>
+<li>如果审核通过，CA机构会向申请者颁发证书<ul>
+<li><strong>证书包含</strong>：申请者公钥、申请者组织/企业信息、CA机构信息、有效时间、<strong>证书序列号</strong>，签名hash算法，同时包含一个<strong>数字签名</strong></li>
+<li><strong>数字签名</strong>：使用签名hash算法（散列函数）将一些明文信息计算得到信息摘要，然后CA用私钥加密信息摘要得到数字签名</li>
+</ul>
+</li>
+</ul>
+<p>2、握手过程：</p>
+<ul>
+<li><p>客服端主动向服务端发送 <code>hello</code> 消息来发起握手请求，将客户端支持的<code>TLS/SSL</code>版本、随机字符串<code>Client random</code>、支持的密码组合（加密算法）等发送给服务端。</p>
+</li>
+<li><p>服务端接收后，将数字证书（数字签名、公钥，申请者信息）、随机字符串<code>Server random</code>、服务器选择的密码组合响应回客户端</p>
+</li>
+<li><p>身份验证：客户端读取证书的相关明文信息，使用相同的散列函数得到摘要信息1。再通过<code>CA</code>的公钥去解密证书中的签名，得到证书的信息摘要2，1对比证书的信息摘要2是否一致，一致则说明，证书的合法性，即公钥合法。然后再验证其它信息，验证的过程：</p>
+<ul>
+<li>检查数字签名，</li>
+<li>验证证书链 </li>
+<li>检查证书的有效期 </li>
+<li>检查证书的证书链</li>
+</ul>
+<p>身份验证成功后，即公钥合法，同时生成下一个随机字符串<code>Premaster secret</code>，并用服务端公钥加密，发送给服务端</p>
+</li>
+<li><p>服务端使用私钥解密，得到<code>Premaster secret</code>(预主密钥)</p>
+</li>
+<li><p>客户端和服务端均使用相同的算法，对<code>Client random</code>， <code>Server random</code>，<code>Premaster secret</code> 生成相同的会话秘钥<code>key</code></p>
+</li>
+<li><p>客户端发送通过<code>key</code>加密的<code>finished</code>信号</p>
+</li>
+<li><p>服务端发送通过<code>key</code>加密后<code>finished</code>信号</p>
+</li>
+<li><p>握手完成，双方使用对称加密进行安全通信</p>
+</li>
+</ul>
+<p>3、身份验证简要图解：</p>
+<p><img src= "/blog/img/loading.gif" data-lazy-src="https://cdn.jsdelivr.net/gh/xingjiahui/CDN@latest/2020/11/19s/7027efeeb822a80232877ec5849e583d.png"></p>
+<p>​                                                                                    </p>
+<p>4、秘钥协商简要图解</p>
+<p><a target="_blank" rel="noopener" href="https://imgchr.com/i/DKaV6U"><img src= "/blog/img/loading.gif" data-lazy-src="https://s3.ax1x.com/2020/11/19/DKaV6U.png" alt="DKaV6U.png"></a></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Chanbaekrisss</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章链接: </span><span class="post-copyright-info"><a href="https://hello-7gysxqay5376a05c-1256486697.tcloudbaseapp.com/blog/2020/11/19/https/">https://hello-7gysxqay5376a05c-1256486697.tcloudbaseapp.com/blog/2020/11/19/https/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://hello-7gysxqay5376a05c-1256486697.tcloudbaseapp.com/blog" target="_blank">Chanbaekrisss's Blog</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/blog/tags/TLS/">TLS</a><a class="post-meta__tags" href="/blog/tags/SSL/">SSL</a><a class="post-meta__tags" href="/blog/tags/https/">https</a><a class="post-meta__tags" href="/blog/tags/http/">http</a><a class="post-meta__tags" href="/blog/tags/%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE/">网络协议</a></div><div class="post_share"><div class="social-share" data-image="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/blog/2020/11/03/hello-world/"><img class="next-cover" data-lazy-src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="onerror=null;src='/blog/img/404.jpg'"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Hello World</div></div></a></div></nav><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div class="vcomment" id="vcomment"></div></div></div></div></div><div class="aside_content" id="aside_content"><div class="card-widget card-info"><div class="card-content"><div class="card-info-avatar is-center"><img class="avatar-img" data-lazy-src="/blog/img/avatar.jpg" onerror="this.onerror=null;this.src='/blog/img/friend_404.gif'" alt="avatar"/><div class="author-info__name">Chanbaekrisss</div><div class="author-info__description">生存还是死亡&#44; 这是个问题</div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/blog/archives/"><div class="headline">文章</div><div class="length-num">2</div></a></div><div class="card-info-data-item is-center"><a href="/blog/tags/"><div class="headline">标签</div><div class="length-num">5</div></a></div></div><a class="button--animated" id="card-info-btn"><i class="fas fa-envelope"></i><span>Contact Me</span></a></div></div><div class="card-widget card-announcement"><div class="card-content"><div class="item-headline"><i class="fas fa-bullhorn card-announcement-animation"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="card-content"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%80%E3%80%81http%E5%92%8Chttps%E6%A6%82%E5%BF%B5"><span class="toc-number">1.</span> <span class="toc-text">一、http和https概念</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E3%80%81http%E5%8D%8F%E8%AE%AE%E5%92%8Chttps%E5%8D%8F%E8%AE%AE%E7%9A%84%E5%8C%BA%E5%88%AB%EF%BC%9A"><span class="toc-number">2.</span> <span class="toc-text">二、http协议和https协议的区别：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E3%80%81SSL%E5%92%8CTLS%E4%BB%8B%E7%BB%8D"><span class="toc-number">3.</span> <span class="toc-text">三、SSL和TLS介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%9B%E3%80%81TLS-%E6%8F%A1%E6%89%8B%E8%AF%A6%E7%BB%86%E8%BF%87%E7%A8%8B"><span class="toc-number">4.</span> <span class="toc-text">四、TLS 握手详细过程</span></a></li></ol></div></div></div><div class="card-widget card-recent-post"><div class="card-content"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/blog/2020/11/19/https/" title="TLS介绍和握手的详细"><img data-lazy-src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="TLS介绍和握手的详细"/></a><div class="content"><a class="title" href="/blog/2020/11/19/https/" title="TLS介绍和握手的详细">TLS介绍和握手的详细</a><time datetime="2020-11-19T11:04:43.000Z" title="发表于 2020-11-19 19:04:43">2020-11-19</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/blog/2020/11/03/hello-world/" title="Hello World"><img data-lazy-src="https://i.loli.net/2020/05/01/gkihqEjXxJ5UZ1C.jpg" onerror="this.onerror=null;this.src='/blog/img/404.jpg'" alt="Hello World"/></a><div class="content"><a class="title" href="/blog/2020/11/03/hello-world/" title="Hello World">Hello World</a><time datetime="2020-11-03T12:52:16.140Z" title="发表于 2020-11-03 20:52:16">2020-11-03</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy; 2020&nbsp;<i style="color:#FF6A6A;animation: announ_animation 0.8s linear infinite;"class="fas fa-heart"></i> By Chanbaekrisss</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="hide-aside-btn" type="button"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="设置"><i class="fas fa-cog"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="fas fa-comments"></i></a><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i></button></div></div><div><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="/blog/js/utils.js"></script><script src="/blog/js/main.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/instant.page/instantpage.min.js" type="module" defer></script><script src="https://cdn.jsdelivr.net/npm/vanilla-lazyload/dist/lazyload.iife.min.js"></script><script src="https://cdn.jsdelivr.net/npm/node-snackbar/dist/snackbar.min.js"></script><div class="js-pjax"><script>function loadValine () {
+  function initValine () {
+    let initData = {
+      el: '#vcomment',
+      appId: 'DPjIo0cU3L4Bco4j2U5QsJeo-gzGzoHsz',
+      appKey: 'GK0ofBDl9S3lD84isODge4sN',
+      placeholder: '记得留下你的昵称和邮箱...我会尽快回复你的~',
+      avatar: 'monsterid',
+      meta: 'nick,mail,link'.split(','),
+      pageSize: '10',
+      lang: 'zh-CN',
+      recordIP: false,
+      serverURLs: '',
+      emojiCDN: '',
+      emojiMaps: "",
+      enableQQ: true,
+      path: window.location.pathname,
+    }
+
+    if (true) { 
+      initData.requiredFields= ('nick,mail'.split(','))
+    }
+    
+    if (false) {
+      const otherData = false
+      initData = Object.assign({}, initData, otherData)
+    }
+    
+    const valine = new Valine(initData)
+  }
+
+  if (typeof Valine === 'function') initValine() 
+  else $.getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js', initValine)
+}
+
+if ('Valine' === 'Valine' || !true) {
+  if (true) btf.loadComment(document.querySelector('#vcomment'),loadValine)
+  else setTimeout(() => loadValine(), 0)
+} else {
+  function loadOtherComment () {
+    loadValine()
+  }
+}</script><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div><link rel="stylesheet" href="/blog/css/custom.css"><script defer="defer" id="fluttering_ribbon" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-fluttering-ribbon.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
+POWERMODE.shake = true;
+POWERMODE.mobile = false;
+document.body.addEventListener('input', POWERMODE);
+</script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>let pjaxSelectors = [
+  'title',
+  '#config_change',
+  '#body-wrap',
+  '#rightside-config-hide',
+  '#rightside-config-show',
+  '.js-pjax'
+]
+
+if (false) {
+  pjaxSelectors.unshift('meta[property="og:image"]', 'meta[property="og:title"]', 'meta[property="og:url"]')
+}
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"]):not([href="/img/"]):not([href="/css/"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  $('script[data-pjax]').each(function () {
+    $(this).parent().append($(this).remove())
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof chatBtnFn === 'function' && chatBtnFn()
+  typeof panguInit === 'function' && panguInit()
+
+  if (typeof gtag === 'function') {
+    gtag('config', '', {'page_path': window.location.pathname});
+  }
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // Analytics
+  if (false) {
+    MtaH5.pgv()
+  }
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+
+  typeof preloader === 'object' && preloader.endLoading()
+})
+
+
+document.addEventListener('pjax:send', function () {
+  typeof preloader === 'object' && preloader.initLoading()
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  $(window).off('scroll')
+
+  //reset readmode
+  $('body').hasClass('read-mode') && $('body').removeClass('read-mode')
+
+})</script></div></body></html>
